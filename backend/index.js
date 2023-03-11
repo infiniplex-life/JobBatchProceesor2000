@@ -57,12 +57,16 @@ app.delete('/delete/:id', async (req, res) => {
   if (!req.params.id) {
     return 'not receive id'
   }
-  await db.deleteOne({ _id: new ObjectId(req.params.id) })
-  fs.rmSync(path.join(DEFAULT_DIR, req.params.id), {
-    recursive: true,
-    force: true
-  })
-  return 'ok'
+  try {
+    await db.deleteOne({ _id: new ObjectId(req.params.id) })
+    if (fs.existsSync( path.join(DEFAULT_DIR, req.params.id))) {
+      const directory = path.join(DEFAULT_DIR, req.params.id)
+      deleteFolder(directory)
+    }
+  }catch(e) {
+    console.log(e);
+  }
+  return res.send('ok')
 })
 
 app.get('/detail/:id', async (req, res) => {
@@ -108,4 +112,9 @@ const getFileInfoFromFolder = route => {
     response.push({ name: file, size })
   }
   return response
+}
+
+const deleteFolder =  (directory) => {
+  fs.rmSync(path.join(directory), {recursive: true})
+
 }
