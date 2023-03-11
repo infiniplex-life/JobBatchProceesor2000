@@ -7,7 +7,7 @@ Folder `backend` for backend
 
 Currently, develop with nodejs v14.17.0
 
-After that install package for `ai-tool`
+Install package for `ai-tool`
 
 ```bash
 cd ai-tool
@@ -21,7 +21,7 @@ npm install
 ```
 ## Usage
 Default backend connect with RabbitMq with port 5672,
-If you want to change port or url connection to rabbitMq, please change `RABBITMQ_URL` in config.js
+If you want to change port or url connection to rabbitMq, please change `RABBITMQ_URL` in /backend/config.js
 
 Run `ai-tool`
 ```
