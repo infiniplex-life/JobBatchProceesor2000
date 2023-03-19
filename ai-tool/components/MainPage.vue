@@ -6,6 +6,9 @@
       >Add new task</b-button
     >
     <b-table :items="items" :fields="fields">
+      <template #cell(name)="data">
+        {{ data.value }} <img v-show="showStatus(data.item) !== undefined" :src="`/${showStatus(data.item) ? 'check' : 'error'}.png`" />
+      </template>
       <template #cell(createdAt)="data">
         {{ formatDate(data.value) }}
       </template>
@@ -21,7 +24,7 @@
         >
       </template>
       <template #cell(detail)="data">
-        <a v-b-modal.modal-detail @click="handleClickDetail(data.item)"
+        <a class="pointer" @click="handleClickDetail(data.item)"
           >Detail</a
         >
       </template>
@@ -36,31 +39,42 @@
         ></b-form-input>
       </b-form-group>
       <b-form-group label="Configuration" label-for="config-input">
-        <b-form-textarea
-          id="config-input"
-          v-model="taskConfigAdd"
-          required
-          :rows="6"
-        ></b-form-textarea>
+            <prism-editor
+      class="my-editor height-300 prism-editor__editor"
+            :highlight="highlighter"
+      v-model="taskConfigAdd"
+    >aaaa</prism-editor>
       </b-form-group>
     </b-modal>
     <b-modal id="modal-delete" hide-header @ok="handOkDelete">
       Delete {{ taskNameDelete }}?
     </b-modal>
-    <b-modal id="modal-detail" hide-header hide-footer @ok="handOkDelete">
-      <b-table :items="tableDetail" :fields="tableDetailFields" size="lg">
-        <template #cell(action)="data">
-          <a @click="handleDownload(data.item)">Open</a>
-        </template>
-      </b-table>
-    </b-modal>
   </b-container>
 </template>
 
 <script>
+import { PrismEditor } from "vue-prism-editor";
+import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
+
+// import highlighting library (you can use any library you want just return html string)
+import { highlight, languages } from "prismjs/components/prism-core";
+import "prismjs/components/prism-clike";
+import "prismjs/components/prism-ini";
+import "prismjs/themes/prism-tomorrow.css"; // import syntax highlighting styles
+import {BIcon,     BIconArrowUp,
+    BIconArrowDown
+} from 'bootstrap-vue'
+import 'bootstrap-vue/dist/bootstrap-vue-icons.min.css'
 import axios from "axios";
-import { BACKEND_URL } from "../config.js";
+
 export default {
+  components: {
+    PrismEditor,
+    BIcon,    
+    BIconArrowUp,
+    BIconArrowDown
+
+  },
   name: "NuxtTutorial",
   data() {
     return {
@@ -92,7 +106,7 @@ export default {
       ],
       items: [],
       taskNameAdd: "",
-      taskConfigAdd: "",
+      taskConfigAdd: `[general] \nmagic_number=42\nmy_name="slim shady"`,
       taskNameDelete: "",
       taskIdDelete: "",
       detailIdDisplay: "",
@@ -102,21 +116,24 @@ export default {
   },
   async mounted() {
     await this.fetchData();
+    setInterval(() => {
+      this.fetchData()
+    }, 10000)
   },
   methods: {
     async fetchData() {
-      let data = await axios.get(`${BACKEND_URL}/tasks`);
+      let data = await axios.get(`/api/tasks`);
       this.items = data.data;
     },
     async addNewTask() {
-      await axios.post(`${BACKEND_URL}/add`, {
+      await axios.post(`/api/add`, {
         name: this.taskNameAdd,
         config: this.taskConfigAdd,
       });
       await this.fetchData();
     },
     async handOkDelete() {
-      await axios.delete(`${BACKEND_URL}/delete/${this.taskIdDelete}`);
+      await axios.delete(`/api/delete/${this.taskIdDelete}`);
       await this.fetchData();
     },
     formatStatus(value) {
@@ -133,17 +150,28 @@ export default {
     },
     handleClickDelete(data) {
       this.taskNameDelete = data.name;
-      this.taskIdDelete = data._id;
+      this.taskIdDelete = data.id;
     },
     async handleClickDetail(data) {
-      this.detailIdDisplay = data._id;
-      const result = await axios.get(`${BACKEND_URL}/detail/${data._id}`);
-      this.tableDetail = result.data;
+      window.open(`/detail?id=${data.id}`, '_blank').focus()
+
     },
     handleDownload(data) {
       window.open(
-        `${BACKEND_URL}/download/${this.detailIdDisplay}/${data.name}`
+        `/api/download/${this.detailIdDisplay}/${data.name}`
       );
+    },
+    highlighter(code) {
+      return highlight(code, languages.ini); //returns html
+    },
+    showStatus(status) {
+      if (status.isSuccess !== null) {
+        if (status.isSuccess === 0 ){
+          return true
+        }
+        return false
+      }
+      return undefined
     },
     formatExecutionTime(duration) {
       
@@ -185,8 +213,38 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style>
 a {
   text-decoration-line: underline !important;
+}
+
+.my-editor {
+
+  font-family: Fira code, Fira Mono, Consolas, Menlo, Courier, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 5px;
+}
+
+.prism-editor__textarea:focus {
+  outline: none;
+}
+
+.height-300 {
+  width: 466px;
+  padding: 0;
+  border: 1px solid #ced4da;
+}
+pre {
+  height: 158px !important;
+  padding: 5px;
+}
+img {
+  width: 20px;
+  height: 20px;
+}
+.pointer {
+  cursor: pointer;
+  color: black;
 }
 </style>
