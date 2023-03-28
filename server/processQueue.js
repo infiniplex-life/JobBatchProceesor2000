@@ -37,12 +37,11 @@ async function processQueueData(id) {
     const dirId = path.join(DEFAULT_DIR,id.toString())
     var log_file = fs.createWriteStream(path.join(dirId, 'logs.txt'), {flags : 'w'});
     const startTime = performance.now()
-    let proc = cproc.spawn(`py mockup.py --config-file ${path.join(dirId, 'config.ini')} --output-dir  ${path.join(dirId)}`, [] , {shell: true} );
+    let proc = cproc.spawn(`python mockup.py --config-file ${path.join(dirId, 'config.ini')} --output-dir  ${path.join(dirId)}`, [] , {shell: true} );
     proc.stdout.on('data',data => log_file.write(data.toString()));
     proc.stderr.on('data', data =>  log_file.write(data.toString()));
     proc.on('exit', async function (code) {
         const endTime = performance.now()
         db.prepare("UPDATE Task Set status = 2 , executeTime = @executeTime, isSuccess = @code WHERE id = @id").run({ id: id.toString(), executeTime: Math.round(endTime - startTime), code: code})
-
     });
 }

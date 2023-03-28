@@ -1,0 +1,40 @@
+version: "3.2"
+services:
+  gui:
+    build: .
+    volumes:
+        - ~/.docker-conf/batch-processor/:/usr/src/app/data
+#    command: sh -c 'npm start'
+    command: sh -c 'npm run dev'
+    ports:
+        - "3000:3000"
+    environment:
+      NODE_ENV: dev
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - rabbitmq_nodejs
+
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 15673:15672
+        - 5673:5672
+    volumes:
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+        - rabbitmq_nodejs
+    healthcheck:
+        # test: ["CMD", "curl", "-f", "http://localhost:15672"]
+        test:  ["CMD", "nc", "-z", "localhost",  "5672"]
+        interval: 5s
+        timeout: 1s
+        retries: 5
+
+networks:
+  rabbitmq_nodejs:
+    driver: bridge

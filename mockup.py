@@ -11,7 +11,6 @@
 ##############################################################################
 
 import argparse
-from distutils.command.config import config
 import textwrap
 import tomli
 
